@@ -71,6 +71,7 @@ final class ZenerGame: ObservableObject {
 // MARK: - View
 struct ZenerGameView: View {
     @StateObject private var game = ZenerGame()
+    @State private var flashedSymbol: ZenerSymbol? = nil
 
     var body: some View {
         Group {
@@ -98,12 +99,21 @@ struct ZenerGameView: View {
                 .fill(.thinMaterial)
                 .frame(height: 180)
                 .overlay(
-                    VStack {
-                        Text("Focus and guess the symbol")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text("?")
-                            .font(.system(size: 56, weight: .bold, design: .rounded))
+                    ZStack {
+                        VStack {
+                            Text("Focus and guess the symbol")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("?")
+                                .font(.system(size: 56, weight: .bold, design: .rounded))
+                        }
+                        .opacity(flashedSymbol == nil ? 1 : 0)
+
+                        if let flash = flashedSymbol {
+                            Text(flash.rawValue)
+                                .font(.system(size: 72, weight: .bold, design: .rounded))
+                                .transition(.scale.combined(with: .opacity))
+                        }
                     }
                 )
 
@@ -165,7 +175,19 @@ struct ZenerGameView: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
             ForEach(symbols) { symbol in
                 Button {
-                    onSelect(symbol)
+#if canImport(UIKit)
+    let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.impactOccurred()
+#endif
+withAnimation(.easeInOut(duration: 0.15)) {
+    flashedSymbol = symbol
+}
+DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+    withAnimation(.easeOut(duration: 0.15)) {
+        flashedSymbol = nil
+    }
+}
+onSelect(symbol)
                 } label: {
                     VStack(spacing: 6) {
                         Text(symbol.rawValue)
@@ -188,3 +210,4 @@ struct ZenerGameView: View {
 #Preview {
     NavigationStack { ZenerGameView() }
 }
+
