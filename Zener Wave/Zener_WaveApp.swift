@@ -11,7 +11,7 @@ import SwiftUI
 struct Zener_WaveApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack { ZenerGameView() }
         }
     }
 }
