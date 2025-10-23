@@ -87,6 +87,7 @@ struct ZenerGameView: View {
         .navigationTitle("Zener Test")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            // Heart (Tip Jar) remains rightmost by being declared first
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingTipJar = true
@@ -94,6 +95,15 @@ struct ZenerGameView: View {
                     Image(systemName: "heart.fill")
                 }
                 .accessibilityLabel("Tip Jar")
+            }
+            // About button declared after, so it appears to the left of the heart on iPhone
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .accessibilityLabel("About")
             }
         }
         .sheet(isPresented: $showingTipJar) {
@@ -224,3 +234,4 @@ onSelect(symbol)
 #Preview {
     NavigationStack { ZenerGameView() }
 }
+
