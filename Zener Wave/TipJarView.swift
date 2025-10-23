@@ -80,6 +80,12 @@ struct TipJarView: View {
                         Button("Close") { dismiss() }
                     }
                 }
+                .onReceive(NotificationCenter.default.publisher(for: .purchaseCompleted)) { _ in
+                    toastMessage = "Thank you for the tip!"
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation { toastMessage = nil }
+                    }
+                }
         }
         .task { await model.load() }
         .overlay(alignment: .bottom) {
