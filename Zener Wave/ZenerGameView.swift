@@ -72,6 +72,7 @@ final class ZenerGame: ObservableObject {
 struct ZenerGameView: View {
     @StateObject private var game = ZenerGame()
     @State private var flashedSymbol: ZenerSymbol? = nil
+    @State private var showingTipJar = false
 
     var body: some View {
         Group {
@@ -85,6 +86,19 @@ struct ZenerGameView: View {
         .padding()
         .navigationTitle("Zener Test")
         .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingTipJar = true
+                } label: {
+                    Image(systemName: "heart.fill")
+                }
+                .accessibilityLabel("Tip Jar")
+            }
+        }
+        .sheet(isPresented: $showingTipJar) {
+            TipJarView()
+        }
     }
 
     private var playView: some View {
@@ -210,4 +224,3 @@ onSelect(symbol)
 #Preview {
     NavigationStack { ZenerGameView() }
 }
-
