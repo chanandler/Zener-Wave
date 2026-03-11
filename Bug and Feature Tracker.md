@@ -16,7 +16,7 @@ No open issues.
 
 ---
 
-## Features
+## New Features
 
 ### Low Priority (Open)
 
@@ -28,6 +28,9 @@ No open issues.
 
 - [ ] 🟢 **F10 — In-App Theme Toggle**
   The app currently follows the system appearance. An explicit in-app dark/light toggle in Settings or About would be a simple addition, especially if the app leans into a moody, mystical aesthetic in dark mode.
+
+- [ ] 🟡 **F15 — Feedback Toggle (Blind Mode)**
+  A toggle in Settings to turn off per-guess feedback — the flash revealing the correct symbol, the correct/incorrect sound, the haptic, and the streak indicator. When disabled the player receives no indication of whether their guess was right or wrong until the results screen. This mirrors a more rigorous ESP test protocol and adds a meaningfully different mode of play. The toggle should default to on (feedback shown) to preserve the current experience.
 
 ---
 
