@@ -18,8 +18,7 @@ struct ZenerGameView: View {
     // Sound toggle, shared with SettingsView
     @AppStorage("soundsEnabled") private var soundsEnabled: Bool = true
 
-    // First-launch detection: show round picker before the first game
-    @AppStorage("hasLaunchedBefore") private var hasLaunchedBefore: Bool = false
+    // Show the welcome/round picker on every launch
     @State private var showingFirstLaunchPicker: Bool = false
 
     var body: some View {
@@ -44,18 +43,12 @@ struct ZenerGameView: View {
                 .accessibilityLabel("Settings")
             }
         }
-        // F3: Apply preferred round count on first launch (non-first-launch path)
+        // Show welcome/round picker on every launch
         .onAppear {
-            if !hasLaunchedBefore {
-                // First launch: show the round picker before starting
-                showingFirstLaunchPicker = true
-            } else if game.roundCount == 25 && preferredRoundCount != 25 {
-                game.startNewGame(numberOfRounds: preferredRoundCount)
-            }
+            showingFirstLaunchPicker = true
         }
         .sheet(isPresented: $showingFirstLaunchPicker) {
             FirstLaunchPickerView(preferredRoundCount: $preferredRoundCount) {
-                hasLaunchedBefore = true
                 game.startNewGame(numberOfRounds: preferredRoundCount)
             }
         }

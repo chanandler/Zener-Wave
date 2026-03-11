@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Shown once on first launch so the user can choose how many rounds they want
-/// before the first game begins.
+/// Welcome screen shown on every launch. Describes Zener cards and lets the
+/// user pick how many rounds they want before starting.
 struct FirstLaunchPickerView: View {
     @Binding var preferredRoundCount: Int
     var onStart: () -> Void
@@ -93,7 +93,7 @@ struct FirstLaunchPickerView: View {
                 .padding(.bottom, 40)
             }
         }
-        .interactiveDismissDisabled()
+
     }
 }
 
