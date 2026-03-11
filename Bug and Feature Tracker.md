@@ -18,6 +18,11 @@ No open issues.
 
 ## New Features
 
+### High Priority (Open)
+
+- [ ] 🔴 **F16 — Re-work app flow**
+  When the app launches, I would like it to display a welcome to zener page and show all the about and history information. There should be a 'Lets Play' button that takes you to a new page where you can choose the 5, 10 or 25 round game. I want to try and have some consistency in the app, and make the steps from opening to playing a round a bit more intuitive."
+
 ### Low Priority (Open)
 
 - [ ] 🟢 **F8 — Home Screen / Lock Screen Widget**
