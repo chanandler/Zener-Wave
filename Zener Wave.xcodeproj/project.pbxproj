@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		225A97D22F620DF100BF2CBA /* Bug and Feature Tracker.md in Resources */ = {isa = PBXBuildFile; fileRef = 225A97D12F620DF100BF2CBA /* Bug and Feature Tracker.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		22457E7C2EA572B100691D84 /* Zener Wave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Zener Wave.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		225A97D12F620DF100BF2CBA /* Bug and Feature Tracker.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "Bug and Feature Tracker.md"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -34,6 +39,7 @@
 			children = (
 				22457E7E2EA572B100691D84 /* Zener Wave */,
 				22457E7D2EA572B100691D84 /* Products */,
+				225A97D12F620DF100BF2CBA /* Bug and Feature Tracker.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				225A97D22F620DF100BF2CBA /* Bug and Feature Tracker.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
