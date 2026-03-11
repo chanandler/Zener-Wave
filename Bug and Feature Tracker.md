@@ -18,32 +18,7 @@ No open issues.
 
 ## Features
 
-### High Priority
-
-- [ ] 🔴 **F1 — Session History & Statistics**
-  Persist game results across sessions using `SwiftData`. Track total games played, all-time average score, best score, and a score trend over time. This is the single most impactful addition — right now every game is forgotten the moment you tap Play Again, which removes any incentive to keep coming back.
-
-- [ ] 🔴 **F2 — Score Interpretation**
-  After a test, put the raw score in context. Random chance predicts exactly 5/25 (20%). Show a brief interpretation based on how far above or below chance the score is (e.g. "Above chance — statistically 1 in 47"), plus an optional fun flavour line ("Your psychic sensitivity appears to be... dormant."). Makes results more meaningful and far more shareable.
-
-- [ ] 🔴 **F3 — Configurable Round Count**
-  The game is hardcoded to 25 rounds. A simple picker (5 / 10 / 25) would make the app more accessible for casual sessions without changing anything about the core mechanic.
-
-### Medium Priority
-
-- [ ] 🟡 **F4 — Sound Effects**
-  A subtle chime on a correct guess and a soft thud on incorrect would complement the existing haptic feedback. Use `AVFoundation` or `AudioServicesPlaySystemSound` for lightweight playback.
-
-- [ ] 🟡 **F5 — Streak Counter**
-  Display a live streak indicator during play ("3 in a row!") with a brief animation when a streak is broken. Streaks are emotionally engaging and make the session feel more dynamic without changing the core mechanic.
-
-- [ ] 🟡 **F6 — Share Results**
-  A share sheet button on the results screen letting users post their score as text or an image (e.g. "I scored 14/25 on the Zener Wave ESP test — can you beat it?"). Drives organic discovery with no backend required.
-
-- [ ] 🟡 **F7 — Symbol Accuracy Breakdown**
-  On the results screen, show a per-symbol accuracy table (e.g. "Waves: 4/5 correct · Star: 0/5 correct"). Some users will find they consistently perform differently on specific symbols, which leans into the mystique of the app.
-
-### Low Priority
+### Low Priority (Open)
 
 - [ ] 🟢 **F8 — Home Screen / Lock Screen Widget**
   A simple widget showing today's best score or last session summary. Low effort relative to the engagement it drives — users see it every time they unlock their phone.
@@ -53,6 +28,31 @@ No open issues.
 
 - [ ] 🟢 **F10 — In-App Theme Toggle**
   The app currently follows the system appearance. An explicit in-app dark/light toggle in Settings or About would be a simple addition, especially if the app leans into a moody, mystical aesthetic in dark mode.
+
+---
+
+## Features — Implemented 2026-03-11
+
+- [x] 🔴 **F1 — Session History & Statistics**
+  Game results are now persisted across sessions using SwiftData (`GameSession.swift`). A new History view (`HistoryView.swift`) shows total games played, all-time accuracy, best score, and a recent trend indicator. Accessible from the chart.bar toolbar button. History can be cleared with the trash button.
+
+- [x] 🔴 **F2 — Score Interpretation**
+  Results screen now shows a statistical interpretation using binomial probability (`ScoreInterpreter.swift`). Displays a headline (e.g. "Above Chance"), a fun flavour line, and the odds of scoring that high by chance (e.g. "1 in 47"). Chance baseline (5/25, 20%) is shown for context.
+
+- [x] 🔴 **F3 — Configurable Round Count**
+  A segmented picker (5 / 10 / 25 rounds) is shown on the results screen. The preference persists across launches via `@AppStorage`. The next game uses the selected count immediately.
+
+- [x] 🟡 **F4 — Sound Effects**
+  Correct and incorrect guesses now play distinct system sounds (`SoundManager.swift`) using `AudioToolbox`. Complements the existing haptic feedback. Zero bundled audio assets required.
+
+- [x] 🟡 **F5 — Streak Counter**
+  A live streak indicator ("X in a row!") is shown during play. A "Streak broken" message briefly appears when a streak ends. Best streak is shown on the results screen. Streak state is tracked in `ZenerGame`.
+
+- [x] 🟡 **F6 — Share Results**
+  A Share button on the results screen lets users share their score and interpretation via the native share sheet. Text includes the score, round count, and interpretation headline.
+
+- [x] 🟡 **F7 — Symbol Accuracy Breakdown**
+  The results screen now includes a per-symbol accuracy section showing correct/total for each of the 5 Zener symbols with a colour-coded progress bar (green = perfect, red = zero correct).
 
 ---
 

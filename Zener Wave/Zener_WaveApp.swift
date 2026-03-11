@@ -7,6 +7,7 @@
 
 import SwiftUI
 import StoreKit
+import SwiftData
 
 extension Notification.Name {
     static let purchaseCompleted = Notification.Name("PurchaseCompletedNotification")
@@ -22,7 +23,7 @@ nonisolated private func checkVerified<T>(_ result: StoreKit.VerificationResult<
     }
 }
 
-// Fix #20: AppDelegate owns the transaction listener task, giving it a well-defined
+// AppDelegate owns the transaction listener task, giving it a well-defined
 // lifetime that starts at launch and is cancelled on app termination via deinit.
 final class AppDelegate: NSObject, UIApplicationDelegate {
     private var transactionListenerTask: Task<Void, Never>?
@@ -57,5 +58,7 @@ struct Zener_WaveApp: App {
         WindowGroup {
             NavigationStack { ZenerGameView() }
         }
+        // F1: Provide SwiftData model container to all views
+        .modelContainer(for: GameSession.self)
     }
 }
