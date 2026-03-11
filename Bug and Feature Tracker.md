@@ -1,6 +1,6 @@
 # Zener Wave - Bug & Feature Tracker
 
-Last updated: 2026-03-11
+Last updated: 2026-03-11 (session 2)
 
 ---
 
@@ -28,6 +28,22 @@ No open issues.
 
 - [ ] 🟢 **F10 — In-App Theme Toggle**
   The app currently follows the system appearance. An explicit in-app dark/light toggle in Settings or About would be a simple addition, especially if the app leans into a moody, mystical aesthetic in dark mode.
+
+---
+
+## Features — Implemented 2026-03-11 (session 2)
+
+- [x] 🟡 **F11 — Settings Screen**
+  New `SettingsView.swift` provides a single destination for all app preferences and links. Sections: Game (round count picker, sound effects toggle), App (History, About, Tip Jar), Support (Rate app, Privacy Policy). Accessible via a `gearshape` toolbar icon on the main game screen.
+
+- [x] 🟡 **F12 — Settings Cog Toolbar Button**
+  The three individual toolbar icon buttons (History, About, Tip Jar) in `ZenerGameView` have been replaced with a single gear icon that navigates to `SettingsView`. Cleaner toolbar, everything in one place.
+
+- [x] 🟡 **F13 — TipJar Explicit Close Button**
+  `TipJarView` now shows a persistent header row with a visible "Close" button. The previous `.cancellationAction` toolbar approach was not rendering because `NavigationStack` was removed in fix #12. The header also displays the "Tip Jar" title consistently.
+
+- [x] 🟡 **F14 — First-Launch Round Picker**
+  On first launch, a `FirstLaunchPickerView` sheet is shown before the game starts. The user selects 5, 10, or 25 rounds. The choice is saved to `@AppStorage("preferredRoundCount")` and `hasLaunchedBefore` is set so the picker never reappears. Subsequent launches start directly with the saved preference.
 
 ---
 

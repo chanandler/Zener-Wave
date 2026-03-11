@@ -8,13 +8,19 @@ struct ZenerGameView: View {
     @StateObject private var game = ZenerGame()
     @State private var flashedSymbol: ZenerSymbol? = nil
     @State private var flashTask: Task<Void, Never>? = nil
-    @State private var showingTipJar = false
 
     // F1: Persist completed sessions
     @Environment(\.modelContext) private var modelContext
 
     // F3: User's preferred round count, persisted across launches
     @AppStorage("preferredRoundCount") private var preferredRoundCount: Int = 25
+
+    // Sound toggle, shared with SettingsView
+    @AppStorage("soundsEnabled") private var soundsEnabled: Bool = true
+
+    // First-launch detection: show round picker before the first game
+    @AppStorage("hasLaunchedBefore") private var hasLaunchedBefore: Bool = false
+    @State private var showingFirstLaunchPicker: Bool = false
 
     var body: some View {
         Group {
@@ -30,37 +36,26 @@ struct ZenerGameView: View {
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
-                    // F1: History
-                    NavigationLink {
-                        HistoryView()
-                    } label: {
-                        Image(systemName: "chart.bar")
-                    }
-                    .accessibilityLabel("History")
-
-                    NavigationLink {
-                        AboutView()
-                    } label: {
-                        Image(systemName: "info.circle")
-                    }
-                    .accessibilityLabel("About")
-
-                    Button {
-                        showingTipJar = true
-                    } label: {
-                        Image(systemName: "heart.fill")
-                    }
-                    .accessibilityLabel("Tip Jar")
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Settings")
             }
         }
-        .sheet(isPresented: $showingTipJar) {
-            TipJarView()
-        }
-        // F3: Apply preferred round count on first launch
+        // F3: Apply preferred round count on first launch (non-first-launch path)
         .onAppear {
-            if game.roundCount == 25 && preferredRoundCount != 25 {
+            if !hasLaunchedBefore {
+                // First launch: show the round picker before starting
+                showingFirstLaunchPicker = true
+            } else if game.roundCount == 25 && preferredRoundCount != 25 {
+                game.startNewGame(numberOfRounds: preferredRoundCount)
+            }
+        }
+        .sheet(isPresented: $showingFirstLaunchPicker) {
+            FirstLaunchPickerView(preferredRoundCount: $preferredRoundCount) {
+                hasLaunchedBefore = true
                 game.startNewGame(numberOfRounds: preferredRoundCount)
             }
         }
@@ -113,8 +108,8 @@ struct ZenerGameView: View {
                 .foregroundStyle(.secondary)
 
             symbolGrid { symbol in
-                // F4: Play sound based on correctness
-                if let correct = game.makeGuess(symbol) {
+                // F4: Play sound based on correctness (respects soundsEnabled setting)
+                if let correct = game.makeGuess(symbol), soundsEnabled {
                     if correct {
                         SoundManager.playCorrect()
                     } else {

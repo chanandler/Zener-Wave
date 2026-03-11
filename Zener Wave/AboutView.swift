@@ -54,6 +54,23 @@ struct AboutView: View {
                 AppVersionRow(title: "Version", value: "\(appVersion) (\(buildNumber))")
             }
 
+            Section("Zener Cards") {
+                Text("Zener cards were developed in the 1930s by perceptual psychologist Karl Zener to test for extrasensory perception (ESP). Each deck contains 25 cards — 5 each of five simple symbols: circle, cross, wavy lines, square, and star.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+
+                Text("In a classic test, a sender concentrates on a hidden card while the receiver tries to guess the symbol using only intuition. Pure chance gives a 20% hit rate (5 correct out of 25). Scoring significantly above chance is taken as evidence of ESP.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+
+                Link(destination: URL(string: "https://en.wikipedia.org/wiki/Zener_cards#:~:text=Zener%20cards%20are%20cards%20used,colleague%2C%20parapsychologist%20J.%20B.%20Rhine%20(1895%E2%80%931980).")!) {
+                    Label("Learn more on Wikipedia", systemImage: "arrow.up.right.square")
+                        .font(.subheadline)
+                }
+            }
+
             Section("Actions") {
                 Button {
                     copyVersionToClipboard()

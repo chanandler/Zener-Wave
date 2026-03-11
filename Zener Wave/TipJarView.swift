@@ -75,18 +75,24 @@ struct TipJarView: View {
     @State private var toastMessage: String?
 
     var body: some View {
-        // Fix #12: no push navigation needed in this sheet, so NavigationStack is removed;
-        // title and close button are applied directly to the content view
-        content
-            .navigationTitle("Tip Jar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
+        VStack(spacing: 0) {
+            // Sheet header with title and explicit Close button
+            HStack {
+                Text("Tip Jar")
+                    .font(.headline)
+                Spacer()
+                Button("Close") { dismiss() }
+                    .foregroundStyle(.secondary)
             }
-            .task { await model.load() }
-            .overlay(alignment: .bottom) {
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            content
+        }
+        .task { await model.load() }
+        .overlay(alignment: .bottom) {
                 if let message = toastMessage {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
