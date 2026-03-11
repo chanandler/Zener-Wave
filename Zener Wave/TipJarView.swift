@@ -75,38 +75,36 @@ struct TipJarView: View {
     @State private var toastMessage: String?
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Tip Jar")
-                .toolbarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Close") { dismiss() }
-                    }
-                }
-            // Fix #9: removed the duplicate onReceive(.purchaseCompleted) handler;
-            // the toast is now set only in the purchase() call path below
-        }
-        .task { await model.load() }
-        .overlay(alignment: .bottom) {
-            if let message = toastMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    Text(message)
-                        .font(.subheadline)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(.bottom, 24)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .onAppear {
-                    // ensure it animates when set programmatically
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {}
+        // Fix #12: no push navigation needed in this sheet, so NavigationStack is removed;
+        // title and close button are applied directly to the content view
+        content
+            .navigationTitle("Tip Jar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
                 }
             }
-        }
-        .animation(.easeInOut, value: toastMessage != nil)
+            .task { await model.load() }
+            .overlay(alignment: .bottom) {
+                if let message = toastMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        Text(message)
+                            .font(.subheadline)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .onAppear {
+                        // ensure it animates when set programmatically
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {}
+                    }
+                }
+            }
+            .animation(.easeInOut, value: toastMessage != nil)
     }
 
     @ViewBuilder

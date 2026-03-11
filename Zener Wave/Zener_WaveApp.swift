@@ -22,32 +22,40 @@ nonisolated private func checkVerified<T>(_ result: StoreKit.VerificationResult<
     }
 }
 
-@main
-struct Zener_WaveApp: App {
-    @State private var transactionListenerTask: Task<Void, Never>? = nil
-    
-    var body: some Scene {
-        WindowGroup {
-            NavigationStack { ZenerGameView() }
-                .task { startTransactionListener() }
-        }
-    }
-    
-    private func startTransactionListener() {
-        guard transactionListenerTask == nil else { return }
+// Fix #20: AppDelegate owns the transaction listener task, giving it a well-defined
+// lifetime that starts at launch and is cancelled on app termination via deinit.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    private var transactionListenerTask: Task<Void, Never>?
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
         transactionListenerTask = Task.detached(priority: .background) {
             for await update in StoreKit.Transaction.updates {
                 do {
                     let transaction: StoreKit.Transaction = try checkVerified(update)
-                    // Fix #21: only finish and notify for tip purchases, not any product
-                    // Fix #8: finish() is the sole responsibility of this listener;
-                    //         purchase() in TipJarModel no longer calls finish() to avoid double-finishing
                     await transaction.finish()
                 } catch {
                     // Unverified or failed verification; handle as needed
                 }
             }
         }
+        return true
+    }
+
+    deinit {
+        transactionListenerTask?.cancel()
     }
 }
 
+@main
+struct Zener_WaveApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    var body: some Scene {
+        WindowGroup {
+            NavigationStack { ZenerGameView() }
+        }
+    }
+}

@@ -19,6 +19,8 @@ struct AboutView: View {
     }
     
     private func copyVersionToClipboard() {
+        // Fix #16: guard prevents re-triggering the alert if it is already showing
+        guard !didCopyVersion else { return }
         let versionString = "\(appVersion) (\(buildNumber))"
         #if canImport(UIKit)
         UIPasteboard.general.string = versionString

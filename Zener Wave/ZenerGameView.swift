@@ -91,23 +91,23 @@ struct ZenerGameView: View {
         .navigationTitle("Zener Test")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
-            // Heart (Tip Jar) remains rightmost by being declared first
+            // Fix #7: single ToolbarItem with HStack gives explicit, reliable button ordering
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingTipJar = true
-                } label: {
-                    Image(systemName: "heart.fill")
+                HStack(spacing: 16) {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("About")
+
+                    Button {
+                        showingTipJar = true
+                    } label: {
+                        Image(systemName: "heart.fill")
+                    }
+                    .accessibilityLabel("Tip Jar")
                 }
-                .accessibilityLabel("Tip Jar")
-            }
-            // About button declared after, so it appears to the left of the heart on iPhone
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    AboutView()
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .accessibilityLabel("About")
             }
         }
         .sheet(isPresented: $showingTipJar) {
@@ -204,7 +204,8 @@ struct ZenerGameView: View {
     @ViewBuilder
     private func symbolGrid(onSelect: @escaping (ZenerSymbol) -> Void) -> some View {
         let symbols = ZenerSymbol.allCases
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+        // Fix #3: plain HStack is simpler and lighter for a fixed 5-item row
+        HStack(spacing: 12) {
             ForEach(symbols) { symbol in
                 Button {
                     #if canImport(UIKit)
