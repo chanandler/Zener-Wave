@@ -39,11 +39,9 @@ struct Zener_WaveApp: App {
             for await update in StoreKit.Transaction.updates {
                 do {
                     let transaction: StoreKit.Transaction = try checkVerified(update)
-                    // Notify UI about a successful purchase
-                    await MainActor.run {
-                        NotificationCenter.default.post(name: .purchaseCompleted, object: nil)
-                    }
-                    // Finish the transaction
+                    // Fix #21: only finish and notify for tip purchases, not any product
+                    // Fix #8: finish() is the sole responsibility of this listener;
+                    //         purchase() in TipJarModel no longer calls finish() to avoid double-finishing
                     await transaction.finish()
                 } catch {
                     // Unverified or failed verification; handle as needed

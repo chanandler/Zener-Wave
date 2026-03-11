@@ -43,17 +43,12 @@ struct AboutView: View {
                         .foregroundStyle(.tint)
                         .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(appDisplayName)
-                            .font(.headline)
-                        Text("Version \(appVersion) (\(buildNumber))")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospaced()
-                    }
+                    Text(appDisplayName)
+                        .font(.headline)
                 }
                 .padding(.vertical, 4)
 
+                // Fix #15: show version only once, in the cleaner label/value row
                 AppVersionRow(title: "Version", value: "\(appVersion) (\(buildNumber))")
             }
 
@@ -86,16 +81,8 @@ struct AboutView: View {
         .navigationTitle("About")
         .toolbarRole(.automatic)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    copyVersionToClipboard()
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .accessibilityLabel("About")
-            }
-        }
+        // Fix #14: removed the misleading info.circle toolbar button that was
+        // silently copying to clipboard instead of showing information
         .alert("Copied", isPresented: $didCopyVersion) {
             Button("OK", role: .cancel) { }
         } message: {

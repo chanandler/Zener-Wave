@@ -38,8 +38,9 @@ final class TipJarModel: ObservableObject {
                 case .unverified:
                     self.errorMessage = "Purchase could not be verified."
                     return false
-                case .verified(let transaction):
-                    await transaction.finish()
+                case .verified:
+                    // Fix #8: transaction.finish() is handled solely by the app-level
+                    // transaction listener in Zener_WaveApp to avoid double-finishing
                     return true
                 }
             case .userCancelled:
@@ -55,12 +56,15 @@ final class TipJarModel: ObservableObject {
         }
     }
 
-    func restore() async {
+    // Fix #11: returns true if any entitlement was found, false if nothing to restore
+    func restore() async -> Bool {
         isLoading = true
         defer { isLoading = false }
+        var found = false
         for await _ in Transaction.currentEntitlements {
-            // Iterating current entitlements is sufficient to trigger restore in StoreKit 2
+            found = true
         }
+        return found
     }
 }
 
@@ -80,12 +84,8 @@ struct TipJarView: View {
                         Button("Close") { dismiss() }
                     }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .purchaseCompleted)) { _ in
-                    toastMessage = "Thank you for the tip!"
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation { toastMessage = nil }
-                    }
-                }
+            // Fix #9: removed the duplicate onReceive(.purchaseCompleted) handler;
+            // the toast is now set only in the purchase() call path below
         }
         .task { await model.load() }
         .overlay(alignment: .bottom) {
@@ -129,13 +129,13 @@ struct TipJarView: View {
                 }
 
                 Button {
-                    Task {
+                    // Fix #10: use structured concurrency (Task.sleep) instead of DispatchQueue
+                    Task { @MainActor in
                         if await model.purchase() {
                             onPurchased?()
                             toastMessage = "Thank you for the tip!"
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                withAnimation { toastMessage = nil }
-                            }
+                            try? await Task.sleep(for: .seconds(2))
+                            withAnimation { toastMessage = nil }
                         }
                     }
                 } label: {
@@ -151,12 +151,13 @@ struct TipJarView: View {
                 .disabled(model.isPurchasing)
 
                 Button("Restore Purchases") {
-                    Task {
-                        await model.restore()
-                        toastMessage = "Restored purchases"
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            withAnimation { toastMessage = nil }
-                        }
+                    // Fix #10: use Task.sleep instead of DispatchQueue
+                    // Fix #11: show different message depending on whether anything was restored
+                    Task { @MainActor in
+                        let restored = await model.restore()
+                        toastMessage = restored ? "Purchases restored" : "No purchases to restore"
+                        try? await Task.sleep(for: .seconds(2))
+                        withAnimation { toastMessage = nil }
                     }
                 }
                 .buttonStyle(.plain)

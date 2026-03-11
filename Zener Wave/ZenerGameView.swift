@@ -38,6 +38,8 @@ struct ZenerRound: Identifiable, Equatable {
     var isCorrect: Bool { guess == card.symbol }
 }
 
+// Fix #2: @MainActor ensures all mutations to @Published properties happen on the main thread
+@MainActor
 final class ZenerGame: ObservableObject {
     @Published private(set) var rounds: [ZenerRound] = []
     @Published private(set) var currentIndex: Int = 0
@@ -72,6 +74,8 @@ final class ZenerGame: ObservableObject {
 struct ZenerGameView: View {
     @StateObject private var game = ZenerGame()
     @State private var flashedSymbol: ZenerSymbol? = nil
+    // Fix #1: store the flash task so it can be cancelled before scheduling a new one
+    @State private var flashTask: Task<Void, Never>? = nil
     @State private var showingTipJar = false
 
     var body: some View {
@@ -163,7 +167,8 @@ struct ZenerGameView: View {
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(game.rounds.enumerated()), id: \.offset) { index, round in
+                    // Fix #5: use element.id (stable UUID) instead of offset for ForEach identity
+                    ForEach(Array(game.rounds.enumerated()), id: \.element.id) { index, round in
                         HStack(spacing: 12) {
                             Text("\(index + 1).")
                                 .frame(width: 28, alignment: .trailing)
@@ -185,7 +190,10 @@ struct ZenerGameView: View {
             }
             .frame(maxHeight: 280)
 
+            // Fix #6: cancel any pending flash task and clear flashedSymbol when starting a new game
             Button("Play Again") {
+                flashTask?.cancel()
+                flashedSymbol = nil
                 game.startNewGame()
             }
             .buttonStyle(.borderedProminent)
@@ -199,19 +207,23 @@ struct ZenerGameView: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
             ForEach(symbols) { symbol in
                 Button {
-#if canImport(UIKit)
-    let generator = UIImpactFeedbackGenerator(style: .light)
-    generator.impactOccurred()
-#endif
-withAnimation(.easeInOut(duration: 0.15)) {
-    flashedSymbol = symbol
-}
-DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-    withAnimation(.easeOut(duration: 0.15)) {
-        flashedSymbol = nil
-    }
-}
-onSelect(symbol)
+                    #if canImport(UIKit)
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    #endif
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        flashedSymbol = symbol
+                    }
+                    // Fix #1: cancel any previous timer before scheduling a new one
+                    flashTask?.cancel()
+                    flashTask = Task {
+                        try? await Task.sleep(for: .seconds(3))
+                        guard !Task.isCancelled else { return }
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            flashedSymbol = nil
+                        }
+                    }
+                    onSelect(symbol)
                 } label: {
                     VStack(spacing: 6) {
                         Text(symbol.rawValue)
@@ -234,4 +246,3 @@ onSelect(symbol)
 #Preview {
     NavigationStack { ZenerGameView() }
 }
-
