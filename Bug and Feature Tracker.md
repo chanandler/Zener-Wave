@@ -34,7 +34,7 @@ No open issues.
 
 ---
 
-## Features — Implemented 2026-03-11 (session 2)
+## New Features — Implemented 2026-03-11 (session 2)
 
 - [x] 🟡 **F11 — Settings Screen**
   New `SettingsView.swift` provides a single destination for all app preferences and links. Sections: Game (round count picker, sound effects toggle), App (History, About, Tip Jar), Support (Rate app, Privacy Policy). Accessible via a `gearshape` toolbar icon on the main game screen.
