@@ -65,36 +65,21 @@ struct AboutView: View {
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
 
-                Link(destination: URL(string: "https://en.wikipedia.org/wiki/Zener_cards#:~:text=Zener%20cards%20are%20cards%20used,colleague%2C%20parapsychologist%20J.%20B.%20Rhine%20(1895%E2%80%931980).")!) {
-                    Label("Learn more on Wikipedia", systemImage: "arrow.up.right.square")
-                        .font(.subheadline)
+                if let wikiURL = URL(string: "https://en.wikipedia.org/wiki/Zener_cards#:~:text=Zener%20cards%20are%20cards%20used,colleague%2C%20parapsychologist%20J.%20B.%20Rhine%20(1895%E2%80%931980).") {
+                    Link(destination: wikiURL) {
+                        Label("Learn more on Wikipedia", systemImage: "arrow.up.right.square")
+                            .font(.subheadline)
+                    }
                 }
             }
 
+            // Fix #14: removed duplicate footer button; one copy action is enough
             Section("Actions") {
                 Button {
                     copyVersionToClipboard()
                 } label: {
                     Label("Copy Version", systemImage: "doc.on.doc")
                 }
-            }
-
-            Section(footer:
-                HStack {
-                    Spacer()
-                    Button {
-                        copyVersionToClipboard()
-                    } label: {
-                        Label("Copy Version", systemImage: "doc.on.doc")
-                            .padding(.horizontal)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityLabel("Copy Version")
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-            ) {
-                EmptyView()
             }
         }
         .navigationTitle("About")

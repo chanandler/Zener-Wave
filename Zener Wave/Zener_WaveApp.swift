@@ -9,9 +9,6 @@ import SwiftUI
 import StoreKit
 import SwiftData
 
-extension Notification.Name {
-    static let purchaseCompleted = Notification.Name("PurchaseCompletedNotification")
-}
 
 @inline(__always)
 nonisolated private func checkVerified<T>(_ result: StoreKit.VerificationResult<T>) throws -> T {
@@ -56,7 +53,7 @@ struct Zener_WaveApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack { ZenerGameView() }
+            NavigationStack { WelcomeView() }
         }
         // F1: Provide SwiftData model container to all views
         .modelContainer(for: GameSession.self)

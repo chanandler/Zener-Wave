@@ -1,6 +1,6 @@
 # Zener Wave - Bug & Feature Tracker
 
-Last updated: 2026-03-11 (session 2)
+Last updated: 2026-03-12
 
 ---
 
@@ -16,26 +16,62 @@ No open issues.
 
 ---
 
+## Pre-Submission Audit Fixes — 2026-03-12
+
+Issues found during a full deep-dive audit before App Store submission. All critical and high severity issues resolved; medium and low issues addressed where practical.
+
+- [x] 🔴 **A1 — Double game start** `ZenerGame.swift` / `ZenerGameView.swift` — `ZenerGame.init()` called `startNewGame()` then `onAppear` called it again, discarding the first deck. Fixed: removed `startNewGame` from `init()`; `onAppear` is the sole entry point.
+
+- [x] 🔴 **A2 — Data loss risk on quick exit** `ZenerGameView.swift` — `GameSession` was inserted into `modelContext` without an explicit save. If the app was terminated immediately after a game, SwiftData's autosave may not have fired. Fixed: added `try? modelContext.save()` after insert.
+
+- [x] 🔴 **A3 — Force unwrap crash risk** `ZenerGame.swift` — `symbols.randomElement()!` could theoretically crash. Fixed: replaced with `?? .circle` fallback.
+
+- [x] 🔴 **A4/A5 — Task leak on view dismissal** `ZenerGameView.swift` — `flashTask` and `timerTask` were never cancelled when the view disappeared (e.g. navigating back mid-game). Fixed: added `.onDisappear` that cancels both tasks.
+
+- [x] 🔴 **A6 — Simplified onAppear condition** `ZenerGameView.swift` — The previous multi-clause condition was fragile and could fail to start the game in edge cases. Fixed: simplified to `if game.roundCount != roundCount`.
+
+- [x] 🔴 **A7 — Timed mode timeout biased toward circle** `ZenerGameView.swift` — When the countdown expired, the forced guess always used `ZenerSymbol.allCases.first!` (circle), skewing scores. Fixed: uses `randomElement() ?? .circle` for an unbiased forced guess.
+
+- [x] 🟡 **A8 — timeRemaining initialised to hardcoded 5** `ZenerGameView.swift` — The countdown state started at 5 regardless of the user's AppStorage setting. Fixed: `onAppear` now syncs `timeRemaining = timedModeSeconds` before starting.
+
+- [x] 🟡 **A9 — Dead code: purchaseCompleted Notification** `Zener_WaveApp.swift` — `Notification.Name.purchaseCompleted` was defined but never posted or observed. Removed.
+
+- [x] 🟡 **A10 — Duplicate "Copy Version" button** `AboutView.swift` — The button appeared both in the Actions section and as a footer. Removed the footer duplicate.
+
+- [x] 🟡 **A11 — No visual feedback on timed mode timeout** `ZenerGameView.swift` — When the countdown hit zero and auto-advanced, there was no indication to the player. Fixed: brief "Time's up!" banner shown in the streak indicator area.
+
+- [x] 🟡 **A12 — Progress bar not animated** `ZenerGameView.swift` — Progress bar updated instantly on each guess. Fixed: `.animation(.easeInOut(duration: 0.3), value: game.progress)` applied.
+
+- [x] 🟢 **A13 — Guess button accessibility labels** `ZenerGameView.swift` — Labels were just the symbol name (e.g. "Circle"). Updated to "Guess Circle" etc. for clearer VoiceOver context.
+
+- [x] 🟢 **A14 — Decorative star icon missing accessibility hint** `WelcomeView.swift` — The ★ header icon had no accessibility attribute. Added `.accessibilityHidden(true)`.
+
+- [x] 🟢 **A15 — Force-unwrap on Wikipedia URL** `WelcomeView.swift`, `AboutView.swift` — Both used `URL(string:)!`. Changed to optional binding; links are simply not shown if the URL ever fails to parse.
+
+---
+
 ## New Features
-
-### High Priority (Open)
-
-- [ ] 🔴 **F16 — Re-work app flow**
-  When the app launches, I would like it to display a welcome to zener page and show all the about and history information. There should be a 'Lets Play' button that takes you to a new page where you can choose the 5, 10 or 25 round game. I want to try and have some consistency in the app, and make the steps from opening to playing a round a bit more intuitive."
 
 ### Low Priority (Open)
 
 - [ ] 🟢 **F8 — Home Screen / Lock Screen Widget**
   A simple widget showing today's best score or last session summary. Low effort relative to the engagement it drives — users see it every time they unlock their phone.
 
-- [ ] 🟢 **F9 — Timed Mode**
-  An optional mode where each round has a countdown (e.g. 3 seconds to answer). Adds pressure and a distinctly different feel — impulsive vs. considered guessing.
-
 - [ ] 🟢 **F10 — In-App Theme Toggle**
   The app currently follows the system appearance. An explicit in-app dark/light toggle in Settings or About would be a simple addition, especially if the app leans into a moody, mystical aesthetic in dark mode.
 
-- [ ] 🟡 **F15 — Feedback Toggle (Blind Mode)**
-  A toggle in Settings to turn off per-guess feedback — the flash revealing the correct symbol, the correct/incorrect sound, the haptic, and the streak indicator. When disabled the player receives no indication of whether their guess was right or wrong until the results screen. This mirrors a more rigorous ESP test protocol and adds a meaningfully different mode of play. The toggle should default to on (feedback shown) to preserve the current experience.
+---
+
+## Features — Implemented 2026-03-12
+
+- [x] 🔴 **F16 — Reworked app flow**
+  `WelcomeView` is now the navigation root. It shows the Zener cards explanation, Wikipedia link, and a live stats summary (games played, accuracy, best score) when history exists. A "Let's Play" button navigates to `RoundPickerView`, which shows 5/10/25 options with labels (Quick / Standard / Full). Selecting a length navigates directly into `ZenerGameView`. On the results screen, "Change Length" navigates back to `RoundPickerView`. `FirstLaunchPickerView` was removed.
+
+- [x] 🟢 **F9 — Timed Mode**
+  Toggle in Settings → Game. When enabled, a per-round countdown timer is shown in the round header. The duration is configurable (3s / 5s / 10s, shown when toggle is on). If the timer expires, the round auto-advances as a miss. The timer resets on each new round and is cancelled immediately when the player makes a guess.
+
+- [x] 🟡 **F15 — Feedback Toggle (Blind Mode)**
+  Toggle in Settings → Game ("Show Feedback"). When disabled: the correct-symbol flash is suppressed, sounds are skipped, haptics are skipped, and the streak indicator is hidden during play. The Sound Effects toggle is automatically disabled when feedback is off. Full results (scores, round list, symbol breakdown, interpretation) are still shown at the end.
 
 ---
 

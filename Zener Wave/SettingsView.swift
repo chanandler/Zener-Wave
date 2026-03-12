@@ -4,13 +4,16 @@ import SwiftData
 struct SettingsView: View {
     @AppStorage("preferredRoundCount") private var preferredRoundCount: Int = 25
     @AppStorage("soundsEnabled") private var soundsEnabled: Bool = true
+    @AppStorage("feedbackEnabled") private var feedbackEnabled: Bool = true
+    @AppStorage("timedModeEnabled") private var timedModeEnabled: Bool = false
+    @AppStorage("timedModeSeconds") private var timedModeSeconds: Int = 5
 
     var body: some View {
         List {
             // MARK: - Game
             Section("Game") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Rounds per game")
+                    Text("Default rounds per game")
                         .font(.subheadline)
                     Picker("Rounds", selection: $preferredRoundCount) {
                         Text("5").tag(5)
@@ -22,6 +25,39 @@ struct SettingsView: View {
                 .padding(.vertical, 4)
 
                 Toggle("Sound Effects", isOn: $soundsEnabled)
+                    .disabled(!feedbackEnabled)
+
+                Toggle(isOn: $feedbackEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show Feedback")
+                        Text("Flash the correct symbol and play sounds after each guess")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Toggle(isOn: $timedModeEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Timed Mode")
+                        Text("Each round has a countdown — answer before time runs out")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if timedModeEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Seconds per round")
+                            .font(.subheadline)
+                        Picker("Seconds", selection: $timedModeSeconds) {
+                            Text("3s").tag(3)
+                            Text("5s").tag(5)
+                            Text("10s").tag(10)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    .padding(.vertical, 4)
+                }
             }
 
             // MARK: - App Links

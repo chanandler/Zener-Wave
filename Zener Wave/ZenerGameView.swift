@@ -5,6 +5,8 @@ import SwiftUI
 import SwiftData
 
 struct ZenerGameView: View {
+    let roundCount: Int
+
     @StateObject private var game = ZenerGame()
     @State private var flashedSymbol: ZenerSymbol? = nil
     @State private var flashTask: Task<Void, Never>? = nil
@@ -12,14 +14,22 @@ struct ZenerGameView: View {
     // F1: Persist completed sessions
     @Environment(\.modelContext) private var modelContext
 
-    // F3: User's preferred round count, persisted across launches
+    // F3: User's preferred round count for "Play Again" (persisted)
     @AppStorage("preferredRoundCount") private var preferredRoundCount: Int = 25
 
     // Sound toggle, shared with SettingsView
     @AppStorage("soundsEnabled") private var soundsEnabled: Bool = true
 
-    // Show the welcome/round picker on every launch
-    @State private var showingFirstLaunchPicker: Bool = false
+    // F15: Feedback toggle — when off, no flash/sound/haptic/streak during play
+    @AppStorage("feedbackEnabled") private var feedbackEnabled: Bool = true
+
+    // F9: Timed mode — countdown per round
+    @AppStorage("timedModeEnabled") private var timedModeEnabled: Bool = false
+    @AppStorage("timedModeSeconds") private var timedModeSeconds: Int = 5
+    // Fix #11: timeRemaining is synced from timedModeSeconds in onAppear
+    @State private var timeRemaining: Int = 5
+    @State private var timerTask: Task<Void, Never>? = nil
+    @State private var showTimeoutBanner: Bool = false
 
     var body: some View {
         Group {
@@ -33,30 +43,32 @@ struct ZenerGameView: View {
         .padding()
         .navigationTitle("Zener Test")
         .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityLabel("Settings")
-            }
-        }
-        // Show welcome/round picker on every launch
+        // Fix #7: Simplified — just start the game with the correct round count
         .onAppear {
-            showingFirstLaunchPicker = true
-        }
-        .sheet(isPresented: $showingFirstLaunchPicker) {
-            FirstLaunchPickerView(preferredRoundCount: $preferredRoundCount) {
-                game.startNewGame(numberOfRounds: preferredRoundCount)
+            // Fix #11: sync timeRemaining from AppStorage on appear
+            timeRemaining = timedModeSeconds
+            if game.roundCount != roundCount {
+                game.startNewGame(numberOfRounds: roundCount)
             }
+            startTimerIfNeeded()
+        }
+        // Fix #4 & #5: Cancel all tasks when view leaves screen
+        .onDisappear {
+            flashTask?.cancel()
+            timerTask?.cancel()
+        }
+        // F9: Reset countdown on each new round
+        .onChange(of: game.currentIndex) { _, _ in
+            startTimerIfNeeded()
         }
         // F1: Save session when game completes
         .onChange(of: game.isComplete) { _, isComplete in
             if isComplete {
+                timerTask?.cancel()
                 let session = GameSession.from(rounds: game.rounds)
                 modelContext.insert(session)
+                // Fix #2: Explicitly persist so data isn't lost if app terminates quickly
+                try? modelContext.save()
             }
         }
     }
@@ -65,14 +77,38 @@ struct ZenerGameView: View {
 
     private var playView: some View {
         VStack(spacing: 20) {
+            // Fix #18: animate progress bar between rounds
             ProgressView(value: game.progress)
                 .tint(.accentColor)
+                .animation(.easeInOut(duration: 0.3), value: game.progress)
 
-            // F5: Streak indicator
-            streakIndicator
+            // F5: Streak indicator (hidden in blind mode)
+            // Fix #17: timeout banner shown in place of streak area
+            if showTimeoutBanner {
+                Text("Time's up!")
+                    .font(.caption).bold()
+                    .foregroundStyle(.red)
+                    .transition(.opacity)
+            } else if feedbackEnabled {
+                streakIndicator
+            } else {
+                Text(" ").font(.subheadline) // stable placeholder
+            }
 
-            Text("Round \(game.currentIndex + 1) of \(game.roundCount)")
-                .font(.headline)
+            HStack {
+                Text("Round \(game.currentIndex + 1) of \(game.roundCount)")
+                    .font(.headline)
+
+                // F9: Countdown timer
+                if timedModeEnabled {
+                    Spacer()
+                    Text("\(timeRemaining)s")
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(timeRemaining <= 2 ? .red : .secondary)
+                        .contentTransition(.numericText())
+                        .animation(.default, value: timeRemaining)
+                }
+            }
 
             RoundedRectangle(cornerRadius: 16)
                 .fill(.thinMaterial)
@@ -86,9 +122,10 @@ struct ZenerGameView: View {
                             Text("?")
                                 .font(.system(size: 56, weight: .bold, design: .rounded))
                         }
-                        .opacity(flashedSymbol == nil ? 1 : 0)
+                        // Flash only shown when feedback is enabled
+                        .opacity(flashedSymbol == nil || !feedbackEnabled ? 1 : 0)
 
-                        if let flash = flashedSymbol {
+                        if let flash = flashedSymbol, feedbackEnabled {
                             Text(flash.rawValue)
                                 .font(.system(size: 72, weight: .bold, design: .rounded))
                                 .transition(.scale.combined(with: .opacity))
@@ -101,17 +138,51 @@ struct ZenerGameView: View {
                 .foregroundStyle(.secondary)
 
             symbolGrid { symbol in
-                // F4: Play sound based on correctness (respects soundsEnabled setting)
-                if let correct = game.makeGuess(symbol), soundsEnabled {
-                    if correct {
-                        SoundManager.playCorrect()
+                if let correct = game.makeGuess(symbol) {
+                    // F15: Only give feedback if enabled
+                    if feedbackEnabled {
+                        // F4: Play sound
+                        if soundsEnabled {
+                            if correct { SoundManager.playCorrect() }
+                            else { SoundManager.playIncorrect() }
+                        }
                     } else {
-                        SoundManager.playIncorrect()
+                        // Blind mode: skip flash, cancel timer-driven flash
+                        flashTask?.cancel()
+                        flashedSymbol = nil
                     }
                 }
             }
 
             Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - Timer helpers (F9)
+
+    private func startTimerIfNeeded() {
+        timerTask?.cancel()
+        showTimeoutBanner = false
+        guard timedModeEnabled, !game.isComplete else { return }
+        timeRemaining = timedModeSeconds
+        timerTask = Task { @MainActor in
+            while timeRemaining > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                timeRemaining -= 1
+            }
+            guard !Task.isCancelled, !game.isComplete else { return }
+            // Fix #8: use a random symbol for the forced guess so it is not
+            // biased toward one symbol (circle) skewing score statistics
+            let timeoutGuess = ZenerSymbol.allCases.randomElement() ?? .circle
+            _ = game.makeGuess(timeoutGuess)
+            flashTask?.cancel()
+            flashedSymbol = nil
+            // Fix #17: briefly show "Time's up!" banner
+            withAnimation { showTimeoutBanner = true }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            withAnimation { showTimeoutBanner = false }
         }
     }
 
@@ -167,42 +238,41 @@ struct ZenerGameView: View {
 
                 Divider()
 
-                // F3: Round count picker
-                VStack(spacing: 8) {
-                    Text("Rounds for next game")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Picker("Rounds", selection: $preferredRoundCount) {
-                        Text("5").tag(5)
-                        Text("10").tag(10)
-                        Text("25").tag(25)
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding(.horizontal)
-
                 // Play Again + F6: Share
-                HStack(spacing: 12) {
+                let interp = ScoreInterpreter.interpret(
+                    score: game.score,
+                    totalRounds: game.roundCount
+                )
+                VStack(spacing: 10) {
                     Button("Play Again") {
                         flashTask?.cancel()
                         flashedSymbol = nil
-                        game.startNewGame(numberOfRounds: preferredRoundCount)
+                        game.startNewGame(numberOfRounds: roundCount)
                     }
                     .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
 
-                    // F6: Share results
-                    let interp = ScoreInterpreter.interpret(
-                        score: game.score,
-                        totalRounds: game.roundCount
-                    )
-                    ShareLink(
-                        item: "I scored \(game.score)/\(game.roundCount) on the Zener Wave ESP test — \(interp.headline.lowercased()). Can you beat it?",
-                        preview: SharePreview("Zener Wave Result", image: Image(systemName: "sparkles"))
-                    ) {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                    HStack(spacing: 12) {
+                        NavigationLink {
+                            RoundPickerView()
+                        } label: {
+                            Label("Change Length", systemImage: "arrow.left.arrow.right")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+
+                        // F6: Share results
+                        ShareLink(
+                            item: "I scored \(game.score)/\(game.roundCount) on the Zener Wave ESP test — \(interp.headline.lowercased()). Can you beat it?",
+                            preview: SharePreview("Zener Wave Result", image: Image(systemName: "sparkles"))
+                        ) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.bordered)
                 }
+                .padding(.horizontal)
             }
             .padding(.vertical)
         }
@@ -304,21 +374,26 @@ struct ZenerGameView: View {
         HStack(spacing: 12) {
             ForEach(symbols) { symbol in
                 Button {
-                    #if canImport(UIKit)
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    #endif
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        flashedSymbol = symbol
-                    }
-                    flashTask?.cancel()
-                    flashTask = Task {
-                        try? await Task.sleep(for: .seconds(3))
-                        guard !Task.isCancelled else { return }
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            flashedSymbol = nil
+                    // F15: Only haptic/flash in feedback mode
+                    if feedbackEnabled {
+                        #if canImport(UIKit)
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        #endif
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            flashedSymbol = symbol
+                        }
+                        flashTask?.cancel()
+                        flashTask = Task {
+                            try? await Task.sleep(for: .seconds(3))
+                            guard !Task.isCancelled else { return }
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                flashedSymbol = nil
+                            }
                         }
                     }
+                    // F9: Cancel the countdown timer when a guess is made
+                    timerTask?.cancel()
                     onSelect(symbol)
                 } label: {
                     VStack(spacing: 6) {
@@ -333,13 +408,13 @@ struct ZenerGameView: View {
                     .background(RoundedRectangle(cornerRadius: 10).fill(.thinMaterial))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(symbol.name)
+                .accessibilityLabel("Guess \(symbol.name)")
             }
         }
     }
 }
 
 #Preview {
-    NavigationStack { ZenerGameView() }
+    NavigationStack { ZenerGameView(roundCount: 10) }
         .modelContainer(for: GameSession.self, inMemory: true)
 }

@@ -21,14 +21,15 @@ final class ZenerGame: ObservableObject {
     var score: Int { rounds.filter { $0.isCorrect }.count }
     var roundCount: Int { rounds.count }
 
-    init(numberOfRounds: Int = 25) {
-        startNewGame(numberOfRounds: numberOfRounds)
-    }
+    // Fix #1: Don't start a game in init — ZenerGameView.onAppear handles it
+    // with the correct roundCount from the user's selection.
+    init() {}
 
-    func startNewGame(numberOfRounds: Int = 25) {
+    func startNewGame(numberOfRounds: Int) {
         let symbols = ZenerSymbol.allCases
+        // Fix #3: safe fallback instead of force unwrap
         rounds = (0..<numberOfRounds).map { _ in
-            ZenerRound(card: ZenerCard(symbol: symbols.randomElement()!))
+            ZenerRound(card: ZenerCard(symbol: symbols.randomElement() ?? .circle))
         }
         currentIndex = 0
         currentStreak = 0
