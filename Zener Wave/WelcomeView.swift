@@ -24,76 +24,39 @@ struct WelcomeView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
+        VStack(spacing: 0) {
+            // Scrollable content — button is pinned below, always visible
+            ScrollView {
+                VStack(spacing: 24) {
 
-                // MARK: Header
-                VStack(spacing: 10) {
-                    // Fix #15: decorative icon, hidden from accessibility
-                    Text("★")
-                        .font(.system(size: 72))
-                        .foregroundStyle(.tint)
-                        .accessibilityHidden(true)
+                    // MARK: Header
+                    VStack(spacing: 6) {
+                        // Fix #15: decorative icon, hidden from accessibility
+                        Text("★")
+                            .font(.system(size: 56))
+                            .foregroundStyle(.tint)
+                            .accessibilityHidden(true)
 
-                    Text("Zener Wave")
-                        .font(.largeTitle).bold()
+                        Text("Zener Wave")
+                            .font(.title).bold()
 
-                    Text("An ESP experiment")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 48)
-
-                // MARK: What are Zener cards?
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("What are Zener cards?")
-                        .font(.headline)
-
-                    Text("Zener cards were developed in the 1930s by perceptual psychologist Karl Zener to test for extrasensory perception (ESP). Each deck contains 25 cards — 5 each of five simple symbols: circle, cross, wavy lines, square, and star.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Text("In a classic test, a sender concentrates on a hidden card while the receiver tries to guess the symbol using only intuition. Pure chance gives a 20% hit rate (5 correct out of 25). Scoring significantly above chance is taken as evidence of ESP.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    // Fix #26: optional URL, link only shown if URL parses
-                    if let wikiURL {
-                        Link(destination: wikiURL) {
-                            Label("Learn more on Wikipedia", systemImage: "arrow.up.right.square")
-                                .font(.subheadline)
-                        }
-                        .padding(.top, 2)
+                        Text("An ESP experiment")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                }
-                .padding(.horizontal, 24)
+                    .padding(.top, 24)
 
-                // MARK: How to play
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("How to play")
-                        .font(.headline)
-
-                    Text("A card is drawn at random and hidden from you. Focus your mind, then tap the symbol you feel is correct. Your score and a statistical interpretation are shown at the end — the app will tell you how likely your result was by chance alone.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 24)
-
-                // MARK: History summary (only shown if games have been played)
-                if !sessions.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Your Stats")
-                            .font(.headline)
-
+                    // MARK: Stats (only shown if games have been played)
+                    if !sessions.isEmpty {
                         HStack(spacing: 0) {
                             statTile(value: "\(totalGames)", label: "Games")
-                            Divider().frame(height: 40)
+                            Divider().frame(height: 36)
                             statTile(
                                 value: String(format: "%.0f%%", allTimeAccuracy),
                                 label: "Accuracy"
                             )
                             if let best = bestSession {
-                                Divider().frame(height: 40)
+                                Divider().frame(height: 36)
                                 statTile(
                                     value: "\(best.score)/\(best.roundCount)",
                                     label: "Best Score"
@@ -101,25 +64,62 @@ struct WelcomeView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 10)
                         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, 24)
+                    }
+
+                    // MARK: What are Zener cards?
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What are Zener cards?")
+                            .font(.headline)
+
+                        Text("Developed in the 1930s by psychologist Karl Zener to test for extrasensory perception (ESP). Each deck has 25 cards — 5 each of five symbols: circle, cross, wavy lines, square, and star.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        Text("Pure chance gives a 20% hit rate. Scoring significantly above chance is taken as evidence of ESP.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        // Fix #26: optional URL, link only shown if URL parses
+                        if let wikiURL {
+                            Link(destination: wikiURL) {
+                                Label("Learn more on Wikipedia", systemImage: "arrow.up.right.square")
+                                    .font(.subheadline)
+                            }
+                            .padding(.top, 2)
+                        }
                     }
                     .padding(.horizontal, 24)
-                }
 
-                // MARK: Let's Play
-                NavigationLink {
-                    RoundPickerView()
-                } label: {
-                    Text("Let's Play")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                    // MARK: How to play
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How to play")
+                            .font(.headline)
+
+                        Text("A card is drawn and hidden from you. Focus your mind, then tap the symbol you feel is correct. Your score and a statistical interpretation are shown at the end.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
                 }
-                .buttonStyle(.borderedProminent)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 48)
             }
+
+            // MARK: Let's Play — always visible at the bottom
+            Divider()
+            NavigationLink {
+                RoundPickerView()
+            } label: {
+                Text("Let's Play")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
